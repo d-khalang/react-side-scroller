@@ -1,0 +1,68 @@
+import { Container, Sprite, useTick } from "@pixi/react";
+import type { Texture } from "@pixi/core";
+import { DEFAULT_POS_X, DEFAULT_POS_Y, MOVE_SPEED } from "../../constants/game-world";
+import { useCallback, useEffect, useRef } from "react";
+import { useHeroControls } from "./useHeroControls";
+import type { Direction, IPosition } from "../../types/common";
+import { calculateNewTarget, checkCanMove, handleMovement } from "../../helpers/common";
+
+interface IHeroProps {
+    // Define any props needed for the Hero component
+    texture: Texture
+    onMove: (gridX: number, gridY: number) => void
+}
+
+export const Hero = ({ texture, onMove }:IHeroProps) => {
+    const position = useRef({ x:DEFAULT_POS_X, y:DEFAULT_POS_Y})
+    const targetPosition = useRef<IPosition | null>(null)
+    const currentDirection = useRef<Direction | null>(undefined)
+    const { getControlsDirection } = useHeroControls()
+    const direction = getControlsDirection()
+
+
+    useEffect(() => {
+        onMove(position.current.x, position.current.y)
+    }, [onMove])
+
+    const setNextTarget = useCallback((direction:Direction) => {
+        if(targetPosition.current) return
+        const {x, y} = position.current
+        currentDirection.current = direction
+        const newTarget = calculateNewTarget(x, y, direction)
+
+        if(checkCanMove(newTarget)){
+            targetPosition.current = newTarget
+        }
+
+    }, [])
+
+    useTick((delta) => {
+        if(direction) {
+            setNextTarget(direction)
+        }
+
+        if(targetPosition.current) {
+            const {completed, position: newPosition} = handleMovement(position.current, targetPosition.current, MOVE_SPEED, delta)
+            position.current = newPosition
+
+            if(completed) {
+                targetPosition.current = null
+
+            }
+        }
+
+    })
+
+    return (
+        <Container>
+            <Sprite 
+                texture={texture}
+                x={position.current.x} 
+                y={position.current.y} 
+                scale={0.5}
+                anchor={[0.7, 0]}
+            />
+        
+        </Container>
+    );
+}
