@@ -17,7 +17,20 @@ export const useHeroAnimation = ({texture, frameWidth, frameHeight, totalFrames,
     const frameRef = useRef(0)
     const elapsedTimeRef = useRef(0)
 
-    
+    const getRowByDirection = (direction:Direction | null) => {
+        switch(direction) {
+            case "UP":
+                return 8
+            case "LEFT":
+                return 9
+            case "DOWN":
+                return 10
+            case "RIGHT":
+                return 11
+            default:
+                return 10
+        }
+    }
 
     const createSprite = (row: number, column: number) => {
         const frame = new Texture(texture.baseTexture, new Rectangle(column * frameWidth, row * frameHeight, frameWidth, frameHeight))
@@ -26,11 +39,24 @@ export const useHeroAnimation = ({texture, frameWidth, frameHeight, totalFrames,
         newSprite.width = TILE_SIZE
         newSprite.height = TILE_SIZE
 
-        return
+        return newSprite
     }
 
     const updateSprite = (direction:Direction|null, isMoving:boolean) => {
         const row = getRowByDirection(direction)
+        let column = 0
+
+        if(isMoving) {
+            elapsedTimeRef.current += animationSpeed
+
+            if(elapsedTimeRef.current >= 1) {
+                elapsedTimeRef.current = 0
+                frameRef.current = (frameRef.current + 1) % totalFrames
+            }
+            column = frameRef.current
+        }
+        const newSprite = createSprite(row, column)
+        seSprite(newSprite)
     }
 
     return {sprite, updateSprite}
